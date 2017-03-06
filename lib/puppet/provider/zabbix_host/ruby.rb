@@ -51,21 +51,31 @@ Puppet::Type.type(:zabbix_host).provide(:ruby, parent: Puppet::Provider::Zabbix)
     end
 
     # Now we create the host
-    hostid = zbx.hosts.create_or_update(
-      host: host,
-      interfaces: [
-        {
-          type: 1,
-          main: 1,
-          ip: ipaddress,
-          dns: host,
-          port: port,
-          useip: use_ip
-        }
-      ],
-      templates: template_array,
-      groups: [groupid: search_hostgroup]
-    )
+    # If created host ip changes you must change it in zabbix web interface or implement this:
+    # https://github.com/express42/zabbixapi/issues/4#issuecomment-226451214
+    if self.class.check_host(host, zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl)
+      hostid = zbx.hosts.create_or_update(
+        host: host,
+        templates: template_array,
+        groups: [groupid: search_hostgroup]
+      )
+    else
+      hostid = zbx.hosts.create_or_update(
+        host: host,
+        interfaces: [
+          {
+            type: 1,
+            main: 1,
+            ip: ipaddress,
+            dns: host,
+            port: port,
+            useip: use_ip
+          }
+        ],
+        templates: template_array,
+        groups: [groupid: search_hostgroup]
+      )
+    end
 
     zbx.templates.mass_add(hosts_id: [hostid], templates_id: template_array)
 
@@ -91,9 +101,7 @@ Puppet::Type.type(:zabbix_host).provide(:ruby, parent: Puppet::Provider::Zabbix)
 
     res = []
     res.push(self.class.check_host(host, zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl))
-    templates.each do |template|
-      res.push(self.class.check_template_in_host(host, template, zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl))
-    end
+    res.push(self.class.check_templates_in_host(host, templates, zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl))
     res.all?
   end
 

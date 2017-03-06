@@ -47,6 +47,21 @@ class Puppet::Provider::Zabbix < Puppet::Provider
     template_array.include?(template_id.to_s)
   end
 
+  # Compares given template names and current host template names
+  def self.check_templates_in_host(host, templates, zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl)
+    zbx = create_connection(zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl)
+    templates_id = []
+    templates.each do |template|
+      templates_id.push(get_template_id(zbx, template))
+    end
+    template_array_int = []
+    template_array = zbx.templates.get_ids_by_host(hostids: [zbx.hosts.get_id(host: host)])
+    template_array.each do |template|
+      template_array_int.push(template.to_i)
+    end
+    templates_id.sort == template_array_int.sort
+  end
+
   # Is it a number?
   def self.a_number?(s)
     s.to_s.match(%r{\A[+-]?\d+?(\.\d+)?\Z}).nil? ? false : true
