@@ -40,7 +40,6 @@ Puppet::Type.type(:zabbix_host).provide(:ruby, parent: Puppet::Provider::Zabbix)
     ipaddress = '' if ipaddress.nil? && use_ip.zero?
 
     hostgroup_create = hostgroup_create ? 1 : 0
-
     # First check if we have an correct hostgroup and if not, we raise an error.
     search_hostgroup = zbx.hostgroups.get_id(name: hostgroup)
     if search_hostgroup.nil? && hostgroup_create == 1
@@ -96,12 +95,16 @@ Puppet::Type.type(:zabbix_host).provide(:ruby, parent: Puppet::Provider::Zabbix)
     zabbix_pass = @resource[:zabbix_pass]
     apache_use_ssl = @resource[:apache_use_ssl]
     templates = @resource[:templates]
+    hostgroup = @resource[:group]
+
 
     templates = [templates] unless templates.is_a?(Array)
 
     res = []
     res.push(self.class.check_host(host, zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl))
     res.push(self.class.check_templates_in_host(host, templates, zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl))
+    res.push(self.class.check_host_group(host, hostgroup, zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl))
+
     res.all?
   end
 

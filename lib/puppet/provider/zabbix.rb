@@ -62,6 +62,11 @@ class Puppet::Provider::Zabbix < Puppet::Provider
     templates_id.sort == template_array_int.sort
   end
 
+  def self.check_host_group(host, hostgroup, zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl)
+    zbx = create_connection(zabbix_url, zabbix_user, zabbix_pass, apache_use_ssl)
+    zbx.hostgroups.get_id(name: hostgroup)
+  end
+
   # Is it a number?
   def self.a_number?(s)
     s.to_s.match(%r{\A[+-]?\d+?(\.\d+)?\Z}).nil? ? false : true
